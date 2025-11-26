@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://haifire.vercel.app/sitemap.xml
+Sitemap: https://haifire.vercel.app/sitemap.txt
