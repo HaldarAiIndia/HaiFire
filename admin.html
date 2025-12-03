@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Admin Panel - HaiFire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="aistudio_Style.css">
+    <style>
+        /* --- Layout Fixes --- */
+        html, body { height: 100%; overflow: hidden; margin: 0; padding: 0; background: var(--bg-primary); }
+        .app-container { display: flex; width: 100%; height: 100%; }
+
+        /* Sidebar Fixes */
+        #left-sidebar {
+            flex-shrink: 0; width: 260px; display: flex; flex-direction: column;
+            border-right: 1px solid var(--border-color); background-color: var(--bg-secondary);
+            z-index: 1000; transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 1023px) {
+            #left-sidebar { position: fixed; top: 0; left: 0; bottom: 0; transform: translateX(-100%); }
+            body.left-sidebar-open #left-sidebar { transform: translateX(0); }
+            body.left-sidebar-open .overlay { opacity: 1; visibility: visible; }
+        }
+
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; height: 100%; position: relative; width: 100%; }
+        .content-area { flex: 1; overflow-y: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding-bottom: 20px; }
+        .content-wrapper { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+        /* --- Admin Specific Styles --- */
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-secondary); padding: 20px; border-radius: 12px;
+            border: 1px solid var(--border-color); display: flex; align-items: center; gap: 16px;
+        }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(130, 170, 255, 0.1); color: var(--text-active);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+        .stat-label { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* Table */
+        .admin-table-container { overflow-x: auto; background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border-color); }
+        .admin-table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .admin-table th { text-align: left; padding: 15px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); font-weight: 600; font-size: 0.9rem; background: var(--bg-tertiary); }
+        .admin-table td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.95rem; vertical-align: middle; }
+        .admin-table tr:last-child td { border-bottom: none; }
+        
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .user-cell img { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-tertiary); object-fit: cover; }
+        
+        /* Edit Username Icon */
+        .edit-name-btn {
+            font-size: 16px; color: var(--text-secondary); cursor: pointer; margin-left: 5px; opacity: 0.7; transition: 0.2s;
+        }
+        .edit-name-btn:hover { opacity: 1; color: var(--text-active); }
+
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .status-verified { background: rgba(76, 175, 80, 0.15); color: #66bb6a; }
+        .status-banned { background: rgba(255, 138, 128, 0.15); color: var(--error-color); }
+        .status-normal { background: var(--bg-hover); color: var(--text-secondary); }
+
+        .action-btn-sm { padding: 6px; border-radius: 4px; color: var(--text-secondary); transition: 0.2s; cursor: pointer; }
+        .action-btn-sm:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .btn-ban:hover { color: var(--error-color); background: rgba(255,138,128,0.1); }
+        .btn-verify:hover { color: #66bb6a; background: rgba(76,175,80,0.1); }
+
+        /* Request Card with Image */
+        .req-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 15px; }
+        .doc-preview {
+            width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px;
+            margin: 10px 0; border: 1px solid var(--border-color); cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .doc-preview:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Overlay -->
+        <div class="overlay" id="overlay"></div>
+
+        <!-- Sidebar -->
+        <aside id="left-sidebar">
+            <div class="sidebar-header" style="color: var(--text-active);">Admin Panel</div>
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <button class="active" onclick="switchTab('dashboard', this)"><span class="material-symbols-outlined">dashboard</span>Dashboard</button>
+                    <button onclick="switchTab('users', this)"><span class="material-symbols-outlined">group</span>Users</button>
+                    <button onclick="switchTab('verifications', this)"><span class="material-symbols-outlined">verified</span>Requests</button>
+                    <div style="height: 20px;"></div>
+                    <a href="home.html"><span class="material-symbols-outlined">home</span>Return to App</a>
+                </nav>
+            </div>
+        </aside>
+
+        <div class="main-wrapper">
+            <header class="main-header">
+                <button id="menu-toggle" class="icon-button" style="display: block;">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="header-title" style="flex:1; margin-left: 10px;">Overview</div>
+            </header>
+
+            <main class="content-area">
+                <div class="content-wrapper">
+
+                    <!-- Dashboard Tab -->
+                    <div id="tab-dashboard">
+                        <div class="stat-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon"><span class="material-symbols-outlined">group</span></div>
+                                <div><div class="stat-value" id="totalUsers">0</div><div class="stat-label">Total Users</div></div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #66bb6a; background: rgba(76,175,80,0.1);"><span class="material-symbols-outlined">post</span></div>
+                                <div><div class="stat-value" id="totalPosts">0</div><div class="stat-label">Total Posts</div></div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon" style="color: #ffa726; background: rgba(255,167,38,0.1);"><span class="material-symbols-outlined">verified_user</span></div>
+                                <div><div class="stat-value" id="pendingVerifications">0</div><div class="stat-label">Requests</div></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Management Tab -->
+                    <div id="tab-users" style="display: none;">
+                        <div class="profile-card" style="padding: 0; background: transparent; border: none; box-shadow: none;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                <h3 style="margin:0;">User Management</h3>
+                                <div class="prompt-input-wrapper" style="width: 200px;">
+                                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--text-secondary);">search</span>
+                                    <input type="text" class="prompt-input" id="searchUser" placeholder="Search..." style="padding: 6px;">
+                                </div>
+                            </div>
+                            <div class="admin-table-container">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="usersTableBody">
+                                        <!-- JS Injects Here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verifications Tab -->
+                    <div id="tab-verifications" style="display: none;">
+                        <h3 style="margin-bottom: 20px;">Verification Requests</h3>
+                        <div id="verificationList">
+                            <div style="text-align: center; color: var(--text-secondary); padding: 40px;">No pending requests.</div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc", authDomain: "citas-bd0a3.firebaseapp.com", databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com", projectId: "citas-bd0a3", storageBucket: "citas-bd0a3.firebasestorage.app", messagingSenderId: "1082213903517", appId: "1:1082213903517:web:22409e051e5442f37ef874", measurementId: "G-TXKMGDLMVB" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- Sidebar Logic ---
+        const menuToggle = document.getElementById('menu-toggle');
+        const overlay = document.getElementById('overlay');
+        const body = document.body;
+        if (window.innerWidth >= 1024) document.getElementById('menu-toggle').style.display = 'none';
+        menuToggle.addEventListener('click', () => body.classList.toggle('left-sidebar-open'));
+        overlay.addEventListener('click', () => body.classList.remove('left-sidebar-open'));
+
+        // --- Data Loading ---
+        async function loadStats() {
+            try {
+                const userSnap = await db.collection('users').get();
+                const postSnap = await db.collection('posts').get();
+                const verifSnap = await db.collection('users').where('verificationRequested', '==', true).get();
+
+                document.getElementById('totalUsers').innerText = userSnap.size;
+                document.getElementById('totalPosts').innerText = postSnap.size;
+                document.getElementById('pendingVerifications').innerText = verifSnap.size;
+            } catch (e) { console.error("Stats error", e); }
+        }
+
+        let allUsers = [];
+
+        function loadUsers() {
+            db.collection('users').orderBy('createdAt', 'desc').limit(50).onSnapshot(snap => {
+                allUsers = [];
+                snap.forEach(doc => {
+                    allUsers.push({ id: doc.id, ...doc.data() });
+                });
+                renderUsers(allUsers);
+            });
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            
+            if(users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="padding:20px;">No users found</td></tr>';
+                return;
+            }
+
+            users.forEach(data => {
+                const avatar = data.avatar ? `<img src="${data.avatar}">` : `<div style="width:32px;height:32px;background:var(--bg-tertiary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text-secondary);">${(data.username||'U')[0].toUpperCase()}</div>`;
+                
+                let statusBadge = '<span class="status-badge status-normal">Normal</span>';
+                if(data.isBanned) statusBadge = '<span class="status-badge status-banned">Banned</span>';
+                else if(data.isVerified) statusBadge = '<span class="status-badge status-verified">Verified</span>';
+
+                const row = `
+                    <tr>
+                        <td>
+                            <div class="user-cell">
+                                ${avatar} 
+                                <span>${data.username || 'No Name'}</span>
+                                <!-- Edit Username Button -->
+                                <span class="material-symbols-outlined edit-name-btn" title="Edit Name" onclick="editUsername('${data.id}', '${data.username || ''}')">edit</span>
+                            </div>
+                        </td>
+                        <td>${data.email || 'N/A'}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button class="action-btn-sm btn-verify" title="Verify" onclick="toggleVerify('${data.id}', ${!data.isVerified})">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">verified</span>
+                            </button>
+                            <button class="action-btn-sm btn-ban" title="Ban/Unban" onclick="toggleBan('${data.id}', ${!data.isBanned})">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">block</span>
+                            </button>
+                            <button class="action-btn-sm" title="Remove Avatar" onclick="removeAvatar('${data.id}')">
+                                <span class="material-symbols-outlined" style="font-size: 20px;">image_not_supported</span>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // --- NEW: Edit Username Function ---
+        async function editUsername(uid, currentName) {
+            const newName = prompt("Enter new username:", currentName);
+            if (newName && newName.trim() !== "" && newName !== currentName) {
+                try {
+                    await db.collection('users').doc(uid).update({ username: newName.trim() });
+                    // No need to alert, onSnapshot will refresh UI
+                } catch (e) {
+                    console.error(e);
+                    alert("Failed to update username.");
+                }
+            }
+        }
+
+        // Search Filter
+        document.getElementById('searchUser').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                (u.username && u.username.toLowerCase().includes(term)) || 
+                (u.email && u.email.toLowerCase().includes(term))
+            );
+            renderUsers(filtered);
+        });
+
+        // --- Verification Logic ---
+        function loadVerifications() {
+            db.collection('users').where('verificationRequested', '==', true).onSnapshot(snap => {
+                const container = document.getElementById('verificationList');
+                container.innerHTML = '';
+                
+                if(snap.empty) {
+                    container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 40px;">No pending requests.</div>';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    const vData = data.verificationData || {};
+                    const realName = vData.fullName || 'N/A'; 
+                    const category = vData.category || 'N/A';
+                    const proofUrl = vData.idProofUrl || null;
+
+                    const card = document.createElement('div');
+                    card.className = 'req-card';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 10px;">
+                            <div>
+                                <h4 style="margin:0 0 4px 0; font-size: 1.1rem;">${data.username}</h4>
+                                <div style="color:var(--text-secondary); font-size:0.9rem;">Real Name: <strong style="color:var(--text-primary)">${realName}</strong></div>
+                                <div style="color:var(--text-secondary); font-size:0.9rem;">Category: <strong style="color:var(--text-primary)">${category}</strong></div>
+                            </div>
+                            <span class="material-symbols-outlined" style="color:var(--text-active);">verified_user</span>
+                        </div>
+                        
+                        <!-- NEW: Document Preview -->
+                        <div style="margin: 10px 0;">
+                            <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:5px;">ID Proof:</p>
+                            ${proofUrl ? 
+                                `<img src="${proofUrl}" class="doc-preview" onclick="window.open('${proofUrl}', '_blank')" title="Click to open full size">` : 
+                                '<div style="padding:10px; background:var(--bg-tertiary); border-radius:8px; color:var(--error-color);">No document uploaded</div>'
+                            }
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" style="flex:1; background-color: #66bb6a;" onclick="approveVerify('${doc.id}')">Approve</button>
+                            <button class="btn btn-secondary" style="flex:1; color: var(--error-color); border-color: var(--error-color);" onclick="rejectVerify('${doc.id}')">Reject</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        // --- Actions ---
+        async function toggleVerify(uid, status) {
+            if(confirm(`Set Verified to ${status}?`)) {
+                await db.collection('users').doc(uid).update({ isVerified: status });
+            }
+        }
+
+        async function toggleBan(uid, status) {
+            const action = status ? "BAN" : "UNBAN";
+            if(confirm(`Are you sure you want to ${action} this user?`)) {
+                await db.collection('users').doc(uid).update({ isBanned: status });
+            }
+        }
+
+        async function removeAvatar(uid) {
+            if(confirm("Remove this user's avatar?")) {
+                await db.collection('users').doc(uid).update({ avatar: "" });
+            }
+        }
+
+        async function approveVerify(uid) {
+            await db.collection('users').doc(uid).update({ 
+                isVerified: true, 
+                verificationRequested: false 
+            });
+            loadStats();
+        }
+
+        async function rejectVerify(uid) {
+            await db.collection('users').doc(uid).update({ 
+                verificationRequested: false 
+            });
+            loadStats();
+        }
+
+        // --- Tab Switching ---
+        window.switchTab = function(tabName, btnElement) {
+            document.querySelectorAll('main > .content-wrapper > div').forEach(div => div.style.display = 'none');
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            
+            if (btnElement) {
+                document.querySelectorAll('.sidebar-nav button').forEach(btn => btn.classList.remove('active'));
+                btnElement.classList.add('active');
+            }
+
+            if(tabName === 'dashboard') loadStats();
+            if(tabName === 'users') loadUsers();
+            if(tabName === 'verifications') loadVerifications();
+            
+            if (window.innerWidth < 1024) document.body.classList.remove('left-sidebar-open');
+        }
+
+        // Initial Load
+        loadStats();
+    </script>
+</body>
+</html>

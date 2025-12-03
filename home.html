@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Home - HaiFire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="aistudio_Style.css">
+    <style>
+        /* --- Layout Fixes --- */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents body scroll, forces internal scroll */
+            background-color: var(--bg-primary);
+        }
+
+        .app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Sidebar Fixes */
+        #left-sidebar {
+            flex-shrink: 0;
+            width: 260px; /* Force width */
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        /* Mobile Sidebar Hidden by Default */
+        @media (max-width: 1023px) {
+            #left-sidebar {
+                position: fixed;
+                top: 0; left: 0; bottom: 0;
+                transform: translateX(-100%);
+            }
+            body.left-sidebar-open #left-sidebar {
+                transform: translateX(0);
+            }
+            body.left-sidebar-open .overlay {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            width: 100%; /* Fix width issues */
+            overflow: hidden;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto; /* Enables scrolling for content only */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 20px;
+        }
+
+        .content-wrapper {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 16px;
+        }
+
+        /* --- Post Card Styling --- */
+        .post-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: background-color 0.3s ease;
+        }
+
+        .post-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .user-meta { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--bg-tertiary); }
+        .username { font-weight: 600; color: var(--text-primary); }
+        .timestamp { font-size: 0.8rem; color: var(--text-secondary); }
+        .post-content { margin-bottom: 15px; line-height: 1.5; color: var(--text-primary); white-space: pre-wrap; word-break: break-word; }
+        .post-image { width: 100%; height: auto; border-radius: 8px; margin-top: 10px; background: var(--bg-tertiary); display: block; }
+        .post-actions { display: flex; gap: 20px; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px; }
+        
+        .action-btn { 
+            display: flex; align-items: center; gap: 6px; 
+            color: var(--text-secondary); 
+            cursor: pointer; 
+            transition: 0.2s; 
+            background: none; 
+            border: none; 
+            font-size: 0.9rem;
+            padding: 5px;
+        }
+        .action-btn:hover { color: var(--text-active); }
+        .action-btn.liked { color: var(--error-color); }
+        .action-btn.liked .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+
+        /* Skeleton Animation */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-tertiary) 50%, var(--bg-secondary) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 4px;
+        }
+        .post-skeleton { padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 16px; background: var(--bg-secondary); }
+        .sk-avatar { width: 40px; height: 40px; border-radius: 50%; }
+        .sk-text { height: 14px; margin-bottom: 8px; }
+        .sk-text.short { width: 60%; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Overlay for Mobile Sidebar -->
+        <div class="overlay" id="overlay"></div>
+
+        <!-- Sidebar -->
+        <aside id="left-sidebar">
+            <div class="sidebar-header">HaiFire</div>
+            <div class="sidebar-content">
+                <nav class="sidebar-nav">
+                    <a href="home.html" class="active"><span class="material-symbols-outlined">home</span>Home</a>
+                    <a href="search.html"><span class="material-symbols-outlined">search</span>Search</a>
+                    <a href="post.html"><span class="material-symbols-outlined">add_circle</span>Create</a>
+                    <a href="requests.html"><span class="material-symbols-outlined">notifications</span>Alerts</a>
+                    <a href="dm.html"><span class="material-symbols-outlined">chat</span>Messages</a>
+                    <a href="profile.html"><span class="material-symbols-outlined">person</span>Profile</a>
+                </nav>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-secondary" id="logoutBtn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span class="material-symbols-outlined">logout</span> Logout
+                </button>
+            </div>
+        </aside>
+
+        <div class="main-wrapper">
+            <!-- Header -->
+            <header class="main-header">
+                <button id="menu-toggle" class="icon-button" style="display: block;">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="header-title" style="flex:1; margin-left: 10px;">Home Feed</div>
+                <a href="stories.html" class="icon-button">
+                    <span class="material-symbols-outlined">amp_stories</span>
+                </a>
+            </header>
+
+            <!-- Scrollable Content -->
+            <main class="content-area">
+                <div class="content-wrapper">
+                    <!-- Skeleton Loader -->
+                    <div id="skeletonContainer">
+                        <div class="post-skeleton">
+                            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                <div class="skeleton sk-avatar"></div>
+                                <div style="flex:1;">
+                                    <div class="skeleton sk-text short"></div>
+                                    <div class="skeleton sk-text" style="width: 30%"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton sk-text"></div>
+                            <div class="skeleton sk-text"></div>
+                            <div class="skeleton sk-text short"></div>
+                        </div>
+                        <div class="post-skeleton">
+                            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                <div class="skeleton sk-avatar"></div>
+                                <div style="flex:1;">
+                                    <div class="skeleton sk-text short"></div>
+                                    <div class="skeleton sk-text" style="width: 30%"></div>
+                                </div>
+                            </div>
+                            <div class="skeleton sk-text" style="height: 200px; width: 100%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Real Posts Container -->
+                    <div id="postsContainer"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Firebase & Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc",
+            authDomain: "citas-bd0a3.firebaseapp.com",
+            databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com",
+            projectId: "citas-bd0a3",
+            storageBucket: "citas-bd0a3.firebasestorage.app",
+            messagingSenderId: "1082213903517",
+            appId: "1:1082213903517:web:22409e051e5442f37ef874",
+            measurementId: "G-TXKMGDLMVB"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null;
+        const userCache = {}; // Cache to prevent re-fetching users
+
+        // --- Sidebar Logic ---
+        const menuToggle = document.getElementById('menu-toggle');
+        const overlay = document.getElementById('overlay');
+        const body = document.body;
+
+        function toggleSidebar() { body.classList.toggle('left-sidebar-open'); }
+        if (window.innerWidth >= 1024) document.getElementById('menu-toggle').style.display = 'none';
+        menuToggle.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', () => body.classList.remove('left-sidebar-open'));
+
+        // --- Auth & Load ---
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+            } else {
+                currentUser = user;
+                loadPosts();
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+        function timeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + "y";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + "mo";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + "d";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + "h";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + "m";
+            return Math.floor(seconds) + "s";
+        }
+
+        // --- CORE FIX: Granular DOM Updates ---
+        function loadPosts() {
+            const container = document.getElementById('postsContainer');
+            const skeleton = document.getElementById('skeletonContainer');
+            
+            // Listen for changes
+            db.collection('posts')
+              .orderBy('timestamp', 'desc')
+              .limit(20)
+              .onSnapshot(snapshot => {
+                
+                // Hide skeleton on first load
+                if (skeleton.style.display !== 'none') skeleton.style.display = 'none';
+
+                if (snapshot.empty && container.children.length === 0) {
+                    container.innerHTML = `<div class="text-center" style="color:var(--text-secondary); padding: 20px;">No posts yet. Follow someone!</div>`;
+                    return;
+                }
+
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const postEl = createPostElement(change.doc);
+                        // Insert at correct index to keep order
+                        if (change.newIndex === 0) {
+                            container.prepend(postEl);
+                        } else {
+                            const beforeElement = container.children[change.newIndex];
+                            container.insertBefore(postEl, beforeElement);
+                        }
+                        fetchAndBindUser(change.doc.data().userId, postEl);
+                    }
+                    if (change.type === "modified") {
+                        // Update existing card without flicker
+                        const existingEl = document.getElementById(`post-${change.doc.id}`);
+                        if (existingEl) {
+                            updatePostContent(existingEl, change.doc);
+                        }
+                    }
+                    if (change.type === "removed") {
+                        const el = document.getElementById(`post-${change.doc.id}`);
+                        if (el) el.remove();
+                    }
+                });
+
+            }, error => {
+                console.error("Error loading posts:", error);
+                if(error.message.includes("indexes")) {
+                    container.innerHTML = `<div class="text-center" style="color:var(--text-active); padding:20px;">Admin: Create Firestore Index via Console.</div>`;
+                    skeleton.style.display = 'none';
+                }
+            });
+        }
+
+        // --- Helper: Create Post HTML ---
+        function createPostElement(doc) {
+            const data = doc.data();
+            const div = document.createElement('div');
+            div.className = 'post-card';
+            div.id = `post-${doc.id}`; // Crucial for finding it later
+            
+            // Initial render with placeholders
+            div.innerHTML = getPostHTML(doc.id, data, {
+                username: 'Loading...', 
+                avatar: '' // Will fallback to CSS placeholder
+            });
+            return div;
+        }
+
+        // --- Helper: Update Existing Post (For Likes) ---
+        function updatePostContent(element, doc) {
+            const data = doc.data();
+            // We only need to update the like button and maybe content if editable
+            // Re-rendering the whole innerHTML is okay here because we are targeting ONE specific card, not the whole list.
+            
+            // However, to keep user data (which we fetched async), let's grab current DOM values
+            const currentUsername = element.querySelector('.username').textContent;
+            const currentAvatar = element.querySelector('.avatar').src;
+
+            element.innerHTML = getPostHTML(doc.id, data, {
+                username: currentUsername,
+                avatar: currentAvatar
+            });
+        }
+
+        // --- Helper: Generate HTML String ---
+        function getPostHTML(postId, data, userData) {
+            // Safety Checks
+            let likesArray = data.likes;
+            if (!Array.isArray(likesArray)) likesArray = [];
+            const isLiked = likesArray.includes(currentUser.uid);
+            const likeCount = data.likesCount || likesArray.length || 0;
+            const timestamp = data.timestamp ? timeAgo(data.timestamp.toDate()) : 'Just now';
+            
+            // Fallback Avatar if empty
+            const avatarSrc = userData.avatar || `https://ui-avatars.com/api/?name=${userData.username}&background=random`;
+
+            return `
+                <div class="post-header">
+                    <div class="user-meta" onclick="window.location.href='user_profile.html?uid=${data.userId}'">
+                        <img src="${avatarSrc}" class="avatar" alt="pic">
+                        <div>
+                            <div class="username">${userData.username}</div>
+                            <div class="timestamp">${timestamp}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="post-content">${data.content}</div>
+                ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" loading="lazy">` : ''}
+                <div class="post-actions">
+                    <button class="action-btn ${isLiked ? 'liked' : ''}" type="button" onclick="toggleLike('${postId}', ${isLiked})">
+                        <span class="material-symbols-outlined">${isLiked ? 'favorite' : 'favorite_border'}</span>
+                        ${likeCount}
+                    </button>
+                    <button class="action-btn" type="button" onclick="window.location.href='comments.html?postId=${postId}'">
+                        <span class="material-symbols-outlined">chat_bubble</span> Comment
+                    </button>
+                </div>
+            `;
+        }
+
+        // --- Helper: Fetch User Info Once ---
+        async function fetchAndBindUser(userId, postElement) {
+            if (userCache[userId]) {
+                updateElementUser(postElement, userCache[userId]);
+                return;
+            }
+
+            try {
+                const doc = await db.collection('users').doc(userId).get();
+                if (doc.exists) {
+                    const userData = doc.data();
+                    userCache[userId] = userData; // Cache it
+                    updateElementUser(postElement, userData);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateElementUser(element, userData) {
+            const nameEl = element.querySelector('.username');
+            const imgEl = element.querySelector('.avatar');
+            if(nameEl) nameEl.textContent = userData.username;
+            if(imgEl) imgEl.src = userData.avatar || `https://ui-avatars.com/api/?name=${userData.username}&background=random`;
+        }
+
+        // --- Like Logic ---
+        window.toggleLike = async (postId, isLiked) => {
+            const postRef = db.collection('posts').doc(postId);
+            // Optimistic Update is handled by onSnapshot 'modified' event automatically
+            if(isLiked) {
+                await postRef.update({
+                    likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
+                    likesCount: firebase.firestore.FieldValue.increment(-1)
+                });
+            } else {
+                await postRef.update({
+                    likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
+                    likesCount: firebase.firestore.FieldValue.increment(1)
+                });
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification - HaiFire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link rel="stylesheet" href="aistudio_Style.css">
+    <style>
+        /* Success / Status Animation Styles */
+        .status-container {
+            text-align: center;
+            padding: 40px 20px;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease;
+        }
+
+        .checkmark-circle {
+            width: 80px; height: 80px; 
+            border-radius: 50%;
+            background: rgba(76, 175, 80, 0.1);
+            border: 2px solid #4CAF50;
+            color: #4CAF50;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .checkmark-icon {
+            font-size: 48px;
+            font-variation-settings: 'FILL' 1;
+        }
+
+        .status-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+        .status-desc { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.5; }
+
+        /* Button Loading Spinner */
+        .btn-spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            margin-right: 8px;
+        }
+        
+        .btn-primary.loading .btn-spinner { display: inline-block; }
+        .btn-primary.loading span { display: none; } /* Hide text icon */
+
+        @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-wrapper">
+            <header class="main-header">
+                <button class="icon-button" onclick="history.back()"><span class="material-symbols-outlined">arrow_back</span></button>
+                <div class="header-title">Request Verification</div>
+            </header>
+
+            <main class="content-area">
+                <div class="content-wrapper">
+                    
+                    <!-- Loading State for Page Load -->
+                    <div id="pageLoader" class="text-center" style="padding: 40px; color: var(--text-secondary);">
+                        <div class="btn-spinner" style="border-color: var(--text-secondary); border-top-color: var(--text-active); margin: 0 auto; display:block;"></div>
+                        <p style="margin-top:10px;">Checking status...</p>
+                    </div>
+
+                    <div class="profile-card" id="cardContainer" style="display: none;">
+                        
+                        <!-- 1. Form Section -->
+                        <div id="formSection">
+                            <div class="text-center" style="margin-bottom: 20px;">
+                                <span class="material-symbols-outlined" style="font-size: 60px; color: var(--text-active);">verified</span>
+                                <h2 style="margin-top: 10px;">Get Verified</h2>
+                                <p style="color: var(--text-secondary);">Submit your details to receive the blue tick.</p>
+                            </div>
+
+                            <form id="verificationForm">
+                                <div class="form-group">
+                                    <label>Full Name</label>
+                                    <input type="text" id="fullName" placeholder="As per ID proof" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Category</label>
+                                    <select id="category" style="width: 100%; background: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 12px; border-radius: 8px; outline: none;">
+                                        <option>Public Figure</option>
+                                        <option>Content Creator</option>
+                                        <option>Business/Brand</option>
+                                        <option>Journalist</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Govt ID Proof (Photo)</label>
+                                    <div class="prompt-input-wrapper" style="cursor: pointer;" onclick="document.getElementById('idProof').click()">
+                                        <span class="material-symbols-outlined" style="color: var(--text-secondary);">upload_file</span>
+                                        <span id="fileName" style="color: var(--text-secondary);">Tap to upload image...</span>
+                                        <input type="file" id="idProof" hidden accept="image/*">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; display: flex; align-items: center; justify-content: center;" id="submitBtn">
+                                    <div class="btn-spinner"></div>
+                                    <span>Submit Request</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 2. Success / Verified Section -->
+                        <div id="statusSection" class="status-container">
+                            <div class="checkmark-circle">
+                                <span class="material-symbols-outlined checkmark-icon">check</span>
+                            </div>
+                            <h2 class="status-title" id="statusTitle">Verification Successful</h2>
+                            <p class="status-desc" id="statusDesc">
+                                Your account has been verified. You now have the blue tick badge on your profile.
+                            </p>
+                            <button class="btn btn-secondary" style="margin-top: 20px;" onclick="window.location.href='profile.html'">Go to Profile</button>
+                        </div>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyB2mV0bya1fD17kQZQeMP11a9mlK-sVEnc", authDomain: "citas-bd0a3.firebaseapp.com", databaseURL: "https://citas-bd0a3-default-rtdb.firebaseio.com", projectId: "citas-bd0a3", storageBucket: "citas-bd0a3.firebasestorage.app", messagingSenderId: "1082213903517", appId: "1:1082213903517:web:22409e051e5442f37ef874", measurementId: "G-TXKMGDLMVB" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const IMGBB_API_KEY = "7184e56bb0953c0545409c441c402a66";
+
+        let currentUser;
+        
+        // UI Elements
+        const pageLoader = document.getElementById('pageLoader');
+        const cardContainer = document.getElementById('cardContainer');
+        const formSection = document.getElementById('formSection');
+        const statusSection = document.getElementById('statusSection');
+        const statusTitle = document.getElementById('statusTitle');
+        const statusDesc = document.getElementById('statusDesc');
+
+        auth.onAuthStateChanged(async user => { 
+            if(user) {
+                currentUser = user; 
+                checkVerificationStatus();
+            } else {
+                window.location.href = 'index.html'; 
+            }
+        });
+
+        async function checkVerificationStatus() {
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if(doc.exists) {
+                    const data = doc.data();
+                    
+                    pageLoader.style.display = 'none';
+                    cardContainer.style.display = 'block';
+
+                    if (data.isVerified) {
+                        // Already Verified
+                        showStatus("Verification Successful", "Your account has been verified. You now have the blue tick badge on your profile.");
+                    } else if (data.verificationRequested) {
+                        // Request Pending
+                        showStatus("Request Pending", "We have received your request. Our team is reviewing your documents. This usually takes 24-48 hours.");
+                    } else {
+                        // Show Form
+                        formSection.style.display = 'block';
+                        statusSection.style.display = 'none';
+                    }
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Error loading status");
+            }
+        }
+
+        function showStatus(title, desc) {
+            formSection.style.display = 'none';
+            statusSection.style.display = 'block';
+            statusTitle.textContent = title;
+            statusDesc.textContent = desc;
+        }
+
+        document.getElementById('idProof').addEventListener('change', function() {
+            document.getElementById('fileName').textContent = this.files[0] ? this.files[0].name : "Tap to upload image...";
+        });
+
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const file = document.getElementById('idProof').files[0];
+            const name = document.getElementById('fullName').value;
+            const category = document.getElementById('category').value;
+
+            if(!file) return alert("Please upload an ID proof.");
+
+            // Start Loading Animation
+            btn.classList.add('loading');
+            btn.disabled = true;
+            btn.querySelector('span').textContent = "Uploading...";
+
+            try {
+                // Upload Image
+                const formData = new FormData();
+                formData.append('image', file);
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method:'POST', body:formData });
+                const data = await res.json();
+                
+                if(!data.success) throw new Error("Image Upload Failed");
+
+                // Update Firestore
+                await db.collection('users').doc(currentUser.uid).update({
+                    verificationRequested: true,
+                    verificationData: {
+                        fullName: name,
+                        category: category,
+                        idProofUrl: data.data.url,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+                });
+
+                // Show Success Animation
+                showStatus("Request Sent Successfully", "We have received your verification request. Please allow 24-48 hours for review.");
+
+            } catch(err) {
+                console.error(err);
+                alert("Error: " + err.message);
+                btn.classList.remove('loading');
+                btn.disabled = false;
+                btn.querySelector('span').textContent = "Submit Request";
+            }
+        });
+    </script>
+</body>
+</html>
